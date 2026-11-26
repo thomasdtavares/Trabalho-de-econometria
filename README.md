@@ -37,7 +37,7 @@ Como os dados são agregados por seção, os resultados descrevem seções, e n�
 - `dic_escolaridade.csv`, `dic_genero.csv` e `dic_faixa_etaria.csv`: os códigos usados pelo TSE.
 
 As bases são grandes demais para o repositório e ficam na aba
-[Releases](https://github.com/thomasdtavares/trabalho-de-econometria/releases).
+[Releases](https://github.com/thomasdtavares/trabalho-de-econometria/releases/tag/dados).
 Para rodar o código sem baixar tudo de novo, coloque as bases cruas em `dados/brutos/` e as tratadas em `dados/`. Se as pastas estiverem vazias, o código baixa as bases cruas sozinho dos sites do TSE (`https://cdn.tse.jus.br/estatistica/sead/odsele/`) e do IBGE (`https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/`). A primeira execução demora.
 
 ## O código (`cod_econo.R`)
