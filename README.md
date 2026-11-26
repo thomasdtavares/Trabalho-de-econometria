@@ -56,7 +56,7 @@ O script roda do início ao fim e está dividido em partes:
 | 6 | Salva a base tratada |
 | 7 | Define a amostra e cria as variáveis: exclui seções que receberam eleitores de seções agregadas e seções sem renda, calcula os percentuais e o voto em Lula, e cria log da renda, região, interações e variáveis centradas no município |
 | 8 | Estatísticas descritivas, histograma, binscatter e mapas |
-| 9 | Regressões M1 a M10, testes F, Breusch-Pagan, VIF, conferência com o `fixest` e testes de especificação |
+| 9 | Regressões M1 a M10, testes F, Breusch-Pagan, VIF, conferência com o `fixest`, testes de especificação e robustez somando o perfil das seções agregadas ao da seção principal |
 | 10 | Tabelas (stargazer) e gráfico de coeficientes |
 
 ### Modelos
