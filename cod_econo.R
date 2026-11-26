@@ -793,66 +793,6 @@ sapply(list(M1 = m1, M2 = m2, M3 = m3, M4 = m4, M5 = m5, M6 = m6, M7 = m7, M8 = 
 round(cbind(M1 = coef(m1)[esc], M2 = coef(m2)[esc], M3 = coef(m3)[esc], M5 = coef(m5)[esc],
             M6 = coef(m6)[esc], M7 = coef(m7)[esc], M9b = coef(m9b)[esc], M10 = coef(m10)[esc]), 3)
 
-# Robustez: em vez de excluir as seções principais que receberam eleitores de seções agregadas,
-# soma ao perfil delas o perfil das seções agregadas (que votaram na seção principal).
-# M6 com todas as seções e M7 com as que têm renda; comparar com m6 e m7 acima.
-rob <- as.data.frame(readRDS(file.path(dir_out, "base_secao_2022.rds")))
-rob <- subset(rob, SG_UF != "ZZ" & no_perfil)
-agreg <- as.data.frame(ler_zip_tse(zip_loc, select = c("NR_TURNO", "SG_UF", "CD_MUNICIPIO", "NR_ZONA",
-                                                       "NR_SECAO", "NR_SECAO_PRINCIPAL")))
-agreg <- subset(agreg, NR_TURNO == 2 & !is.na(NR_SECAO_PRINCIPAL) & NR_SECAO_PRINCIPAL > 0 &
-                  NR_SECAO_PRINCIPAL != NR_SECAO)
-agreg <- unique(agreg[, c("SG_UF", "CD_MUNICIPIO", "NR_ZONA", "NR_SECAO", "NR_SECAO_PRINCIPAL")])
-cont <- grep("^(esc_|gen_|idade_)|^qt_eleitores_perfil$", names(rob), value = TRUE)
-agreg <- merge(agreg, rob[, c("SG_UF", "CD_MUNICIPIO", "NR_ZONA", "NR_SECAO", cont)])
-soma <- aggregate(agreg[, cont], by = list(SG_UF = agreg$SG_UF, CD_MUNICIPIO = agreg$CD_MUNICIPIO,
-                                           NR_ZONA = agreg$NR_ZONA, NR_SECAO = agreg$NR_SECAO_PRINCIPAL), FUN = sum)
-names(soma)[-(1:4)] <- paste0("ag_", cont)
-rob <- merge(rob, soma, all.x = TRUE)
-for (v in cont) rob[[v]] <- rob[[v]] + ifelse(is.na(rob[[paste0("ag_", v)]]), 0, rob[[paste0("ag_", v)]])
-
-rob <- subset(rob, na_votacao_t2 & no_local & qt_eleitores_perfil > 0)
-rob$pct_lula_t2 <- 100 * rob$t2_votos_13 / (rob$t2_votos_13 + rob$t2_votos_22)
-rob <- subset(rob, !is.na(pct_lula_t2))
-rob$pct_esc_nao_inf <- 100 * rob$esc_0 / rob$qt_eleitores_perfil
-rob$pct_analfabeto  <- 100 * rob$esc_1 / rob$qt_eleitores_perfil
-rob$pct_le_escreve  <- 100 * rob$esc_2 / rob$qt_eleitores_perfil
-rob$pct_fund_inc    <- 100 * rob$esc_3 / rob$qt_eleitores_perfil
-rob$pct_fund_comp   <- 100 * rob$esc_4 / rob$qt_eleitores_perfil
-rob$pct_medio_inc   <- 100 * rob$esc_5 / rob$qt_eleitores_perfil
-rob$pct_sup_inc     <- 100 * rob$esc_7 / rob$qt_eleitores_perfil
-rob$pct_sup_comp    <- 100 * rob$esc_8 / rob$qt_eleitores_perfil
-rob$pct_mulheres <- 100 * rob$gen_4 / rob$qt_eleitores_perfil
-rob$pct_25_34 <- 100 * (rob$idade_2529 + rob$idade_3034) / rob$qt_eleitores_perfil
-rob$pct_35_44 <- 100 * (rob$idade_3539 + rob$idade_4044) / rob$qt_eleitores_perfil
-rob$pct_45_59 <- 100 * (rob$idade_4549 + rob$idade_5054 + rob$idade_5559) / rob$qt_eleitores_perfil
-rob$pct_60_mais <- 100 * (rob$idade_6064 + rob$idade_6569 + rob$idade_7074 + rob$idade_7579 + rob$idade_8084 +
-                            rob$idade_8589 + rob$idade_9094 + rob$idade_9599 + rob$idade_9999) / rob$qt_eleitores_perfil
-rob$log_eleitores <- log(rob$qt_eleitores_perfil)
-rob$log_renda <- log(rob$renda_media)
-rob$municipio <- paste(rob$SG_UF, rob$CD_MUNICIPIO, sep = "_")
-
-vars_r <- c("pct_lula_t2", esc, "pct_esc_nao_inf", "pct_mulheres", "pct_25_34", "pct_35_44",
-            "pct_45_59", "pct_60_mais", "log_eleitores", "log_renda")
-rob_m6 <- rob
-rob_m7 <- subset(rob, is.finite(log_renda))
-for (v in vars_r) {
-  rob_m6[[v]] <- rob_m6[[v]] - ave(rob_m6[[v]], rob_m6$municipio)
-  rob_m7[[v]] <- rob_m7[[v]] - ave(rob_m7[[v]], rob_m7$municipio)
-}
-m6_rob <- lm(pct_lula_t2 ~ pct_analfabeto + pct_le_escreve + pct_fund_inc + pct_fund_comp +
-               pct_medio_inc + pct_sup_inc + pct_sup_comp + pct_esc_nao_inf +
-               pct_mulheres + pct_25_34 + pct_35_44 + pct_45_59 + pct_60_mais + log_eleitores - 1,
-             data = rob_m6)
-m7_rob <- lm(pct_lula_t2 ~ pct_analfabeto + pct_le_escreve + pct_fund_inc + pct_fund_comp +
-               pct_medio_inc + pct_sup_inc + pct_sup_comp + pct_esc_nao_inf +
-               pct_mulheres + pct_25_34 + pct_35_44 + pct_45_59 + pct_60_mais + log_eleitores + log_renda - 1,
-             data = rob_m7)
-coeftest(m6_rob, vcov = vcovCL(m6_rob, cluster = ~municipio))
-coeftest(m7_rob, vcov = vcovCL(m7_rob, cluster = ~municipio))
-sapply(list(M6_rob = m6_rob, M7_rob = m7_rob), nobs)
-round(cbind(M6 = coef(m6)[esc], M6_rob = coef(m6_rob)[esc], M7 = coef(m7)[esc], M7_rob = coef(m7_rob)[esc]), 3)
-
 
 # =============================================================================
 # 10. TABELAS E GRÁFICO DE COEFICIENTES
